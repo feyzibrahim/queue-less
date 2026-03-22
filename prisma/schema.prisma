@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  phone     String      @unique
+  users     User[]
+  queue     QueueEntry[]
+  createdAt DateTime    @default(now())
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phoneNumber  String   @unique
+  name         String?
+  role         String   @default("ADMIN")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  createdAt    DateTime @default(now())
+}
+
+model OTPRequest {
+  id          String   @id @default(cuid())
+  phoneNumber String
+  codeHash    String
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model ConversationState {
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  state       String
+  tempData    Json?
+  updatedAt   DateTime @updatedAt
+}
+
+model QueueEntry {
+  id            String   @id @default(cuid())
+  customerName  String
+  phoneNumber   String
+  customerSize  Int
+  status        String   @default("waiting")
+  position      Int
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
