@@ -16,9 +16,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { Users, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Users, Clock, CheckCircle, XCircle, History, UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { LogsModal } from "@/components/logs-modal";
+import { ManualEntryModal } from "@/components/manual-entry-modal";
 
 interface QueueEntry {
 	id: string;
@@ -34,6 +36,9 @@ export default function QueuePage() {
 	const [queue, setQueue] = useState<QueueEntry[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [updating, setUpdating] = useState<string | null>(null);
+	const [selectedEntry, setSelectedEntry] = useState<{ id: string; name: string } | null>(null);
+	const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+	const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
 
 	useEffect(() => {
 		fetchQueue();
@@ -85,6 +90,11 @@ export default function QueuePage() {
 		}
 	};
 
+	const openLogsModal = (id: string, name: string) => {
+		setSelectedEntry({ id, name });
+		setIsLogsModalOpen(true);
+	};
+
 	const waitingCount = queue.filter((q) => q.status === "waiting").length;
 	const avgWait = waitingCount > 0 ? waitingCount * 6 : 0;
 
@@ -97,6 +107,10 @@ export default function QueuePage() {
 						Manage customer reservations and queue positions
 					</p>
 				</div>
+				<Button onClick={() => setIsManualEntryOpen(true)}>
+					<UserPlus className="w-4 h-4 mr-2" />
+					Add Customer
+				</Button>
 			</div>
 
 			{/* Stats */}
@@ -175,6 +189,7 @@ export default function QueuePage() {
 										<TableHead>Customer Size</TableHead>
 										<TableHead>Status</TableHead>
 										<TableHead>Actions</TableHead>
+										<TableHead>Logs</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -182,9 +197,9 @@ export default function QueuePage() {
 										<TableRow
 											key={entry.id}
 											className={
-												entry.status === "waiting"
-													? ""
-													: "opacity-50"
+												entry.status === "seated"
+													? "opacity-50"
+													: ""
 											}
 										>
 											<TableCell className="font-bold">
@@ -277,6 +292,15 @@ export default function QueuePage() {
 													</Button>
 												)}
 											</TableCell>
+											<TableCell>
+												<Button
+													size="icon"
+													variant="outline"
+													onClick={() => openLogsModal(entry.id, entry.customerName)}
+												>
+													<History className="w-3 h-3" />
+												</Button>
+											</TableCell>
 										</TableRow>
 									))}
 								</TableBody>
@@ -285,6 +309,23 @@ export default function QueuePage() {
 					)}
 				</CardContent>
 			</Card>
+
+			{/* Logs Modal */}
+			{selectedEntry && (
+				<LogsModal
+					isOpen={isLogsModalOpen}
+					onClose={() => setIsLogsModalOpen(false)}
+					queueEntryId={selectedEntry.id}
+					customerName={selectedEntry.name}
+				/>
+			)}
+
+			{/* Manual Entry Modal */}
+			<ManualEntryModal
+				isOpen={isManualEntryOpen}
+				onClose={() => setIsManualEntryOpen(false)}
+				onSuccess={fetchQueue}
+			/>
 		</div>
 	);
 }

@@ -55,4 +55,16 @@ model QueueEntry {
   restaurantId  String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  logs          QueueEntryLog[]
+}
+
+model QueueEntryLog {
+  id            String   @id @default(cuid())
+  queueEntry    QueueEntry @relation(fields: [queueEntryId], references: [id])
+  queueEntryId  String
+  oldStatus     String?
+  newStatus     String
+  changedBy     String?
+  changeReason  String?
+  createdAt     DateTime @default(now())
 }

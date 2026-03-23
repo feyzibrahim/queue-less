@@ -19,6 +19,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export async function sendWhatsAppMessage(to: string, body: string) {
+	// Check if WhatsApp is enabled via feature flag
+	const whatsappEnabled = process.env.WHATSAPP_ENABLED === "true";
+
+	if (!whatsappEnabled) {
+		console.log(`📲 [WhatsApp Disabled] Would send to ${to}: "${body}"`);
+		return; // Silently skip sending when disabled
+	}
+
 	if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
 		const msg =
 			"Twilio WhatsApp configuration missing: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and either TWILIO_WHATSAPP_FROM or TWILIO_WHATSAPP_NUMBER.";

@@ -26,5 +26,6 @@ export async function GET(req: NextRequest) {
 			phone: restaurant.phone,
 			slug: restaurant.slug,
 		},
+		whatsappEnabled: process.env.WHATSAPP_ENABLED === "true",
 	});
 }

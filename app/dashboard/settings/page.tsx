@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Phone, QrCode, ExternalLink, Copy, Check } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Building2, Phone, QrCode, ExternalLink, Copy, Check, MessageSquare } from "lucide-react";
 
 export default function SettingsPage() {
 	const [restaurant, setRestaurant] = useState<{
@@ -21,13 +22,18 @@ export default function SettingsPage() {
 	} | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [copied, setCopied] = useState(false);
+	const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+	const [updatingSettings, setUpdatingSettings] = useState(false);
 
 	useEffect(() => {
 		void (async () => {
 			try {
 				const res = await fetch("/api/settings/info");
 				const data = await res.json();
-				if (res.ok) setRestaurant(data.restaurant);
+				if (res.ok) {
+					setRestaurant(data.restaurant);
+					setWhatsappEnabled(data.whatsappEnabled || false);
+				}
 			} catch (error) {
 				console.error("Failed to load settings:", error);
 			} finally {
@@ -47,6 +53,27 @@ export default function SettingsPage() {
 			setTimeout(() => setCopied(false), 2000);
 		} catch (error) {
 			console.error("Failed to copy:", error);
+		}
+	};
+
+	const toggleWhatsApp = async () => {
+		setUpdatingSettings(true);
+		try {
+			const res = await fetch("/api/settings/whatsapp", {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				credentials: "include",
+				body: JSON.stringify({ enabled: !whatsappEnabled }),
+			});
+			if (res.ok) {
+				setWhatsappEnabled(!whatsappEnabled);
+			} else {
+				console.error("Failed to update WhatsApp setting");
+			}
+		} catch (error) {
+			console.error("Error updating WhatsApp setting:", error);
+		} finally {
+			setUpdatingSettings(false);
 		}
 	};
 
@@ -133,6 +160,48 @@ export default function SettingsPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
+								<MessageSquare className="w-5 h-5" />
+								WhatsApp Settings
+							</CardTitle>
+							<CardDescription>
+								Control WhatsApp messaging functionality
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-6">
+							<div className="flex items-center justify-between p-4 border rounded-lg">
+								<div className="flex-1">
+									<div className="flex items-center gap-2 mb-2">
+										<MessageSquare className="w-4 h-4" />
+										<h3 className="font-medium">Enable WhatsApp Messages</h3>
+									</div>
+									<p className="text-sm text-muted-foreground">
+										When enabled, customers will receive WhatsApp notifications
+										when their table is ready. When disabled, messages are logged
+										to console only (useful for testing).
+									</p>
+								</div>
+								<Switch
+									checked={whatsappEnabled}
+									onCheckedChange={toggleWhatsApp}
+									disabled={updatingSettings}
+								/>
+							</div>
+
+							<div className="flex items-center gap-3">
+								<Badge variant={whatsappEnabled ? "default" : "secondary"}>
+									{whatsappEnabled ? "Enabled" : "Disabled"}
+								</Badge>
+								<span className="text-sm text-muted-foreground">
+									WhatsApp messaging is {whatsappEnabled ? "active" : "inactive"}
+								</span>
+							</div>
+						</CardContent>
+					</Card>
+
+					{/* WhatsApp QR Code */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
 								<Phone className="w-5 h-5" />
 								WhatsApp Integration
 							</CardTitle>
@@ -216,13 +285,20 @@ export default function SettingsPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<div className="flex items-center gap-3">
-								<Badge variant="default" className="bg-green-600">
-									Active
-								</Badge>
-								<span className="text-sm text-muted-foreground">
-									WhatsApp integration is working correctly
-								</span>
+							<div className="space-y-3">
+								<div className="flex items-center gap-3">
+									<Badge variant={whatsappEnabled ? "default" : "secondary"}>
+										{whatsappEnabled ? "Active" : "Inactive"}
+									</Badge>
+									<span className="text-sm text-muted-foreground">
+										WhatsApp messaging is {whatsappEnabled ? "enabled" : "disabled"}
+									</span>
+								</div>
+								{!whatsappEnabled && (
+									<div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+										⚠️ WhatsApp messages are currently disabled. Customers won't receive notifications when their table is ready.
+									</div>
+								)}
 							</div>
 						</CardContent>
 					</Card>

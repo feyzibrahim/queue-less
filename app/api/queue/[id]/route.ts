@@ -37,6 +37,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 		status = "cancelled";
 	}
 
+	// Create log entry for status change
+	if (status !== queue.status) {
+		await prisma.queueEntryLog.create({
+			data: {
+				queueEntryId: queue.id,
+				oldStatus: queue.status,
+				newStatus: status,
+				changedBy: session.phoneNumber,
+				changeReason: `Status changed to ${status}`,
+			},
+		});
+	}
+
 	await prisma.queueEntry.update({ where: { id: queue.id }, data: { status } });
 
 	if (parse.data.action === "seated" || parse.data.action === "cancelled") {
